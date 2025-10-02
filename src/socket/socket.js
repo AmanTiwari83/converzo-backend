@@ -4,7 +4,7 @@ const getRoomId = (user1, user2) => [user1, user2].sort().join('_');
 
 module.exports = (io) => {
   io.on("connection", (socket) => {
-    console.log("Socket connected.");
+    console.log("Socket connected.....");
 
     socket.on("joinRoom", ({ sender, receiver }) => {
       const roomId = getRoomId(sender, receiver);
@@ -12,6 +12,7 @@ module.exports = (io) => {
     });
 
     socket.on("privateMessage", async ({ sender, receiver, message , time , date }) => {
+      console.log("Private message received:", { sender, receiver, message , time , date });
       const roomId = getRoomId(sender, receiver);
       const saved = await saveMessage(sender, message, roomId , time  , date);
       io.to(roomId).emit("newPrivateMessage", saved);
