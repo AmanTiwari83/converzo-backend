@@ -30,6 +30,11 @@ app.use('/api/users', userRouter);
 const messageRouter = require('./routers/message.router');
 app.use('/api/messages', messageRouter);
 
+// Simple route
+app.get("/", (req, res) => {
+  res.send("Backend is running");
+});
+
 // DB connection
 dbConfig();
 
