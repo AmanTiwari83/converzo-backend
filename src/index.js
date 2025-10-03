@@ -8,16 +8,22 @@ const path = require("path")
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: [process.env.CLIENT_URL], 
+  credentials: true
+}));
 app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const server = http.createServer(app);
+// ✅ Socket.IO with proper CORS
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL, 
-    methods: ["GET", "POST"]
+    origin: [process.env.CLIENT_URL],
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
+
 
 // 🔌 Use socket handler
 const socketHandler = require('./socket/socket');
