@@ -4,35 +4,78 @@ const jwt = require('jsonwebtoken');
 
 const registerUser = async (req, res) => {
     const { name, email, password, dob, mobile } = req.body;
-    console.log(req.body);
     const profile = req.file;
-    if(!name && !email && !password && !dob && !mobile){
-        return res.status(400).json({message:"All Fields are Required"})
+
+    if (!name || !email || !password || !dob || !mobile) {
+        return res.status(400).json({ message: "All fields are required" });
     }
     if (!profile) {
         return res.status(400).json({ message: "Profile image is required" });
     }
+
     try {
         // Check if user already exists
-        const existingUser = await User.find({ email });
-        if (existingUser.length > 0) {
-            return res.status(400).json({ message: 'User already exists' });
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: "User already exists" });
         }
-        // Hash the password
+
+        // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
-        // Create a new user
-        const newUser = new User({ name, email, password: hashedPassword, dob, mobile, profilePicture: profile.filename });
+
+        // Create new user
+        const newUser = new User({
+            name,
+            email,
+            password: hashedPassword,
+            dob,
+            mobile,
+            profilePicture: profile.filename,
+        });
         await newUser.save();
-        return res.status(201).json({ message: 'User registered successfully' });
+
+        // ✅ Auto-login: create JWT
+        const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, {
+            expiresIn: "7d", // optional
+        });
+
+        // ✅ Return login-like response
+        return res.status(201).json({
+            message: "User registered and logged in successfully",
+            token,
+            user: {
+                id: newUser._id,
+                name: newUser.name,
+                email: newUser.email,
+                mobile: newUser.mobile,
+                dob: newUser.dob,
+                profilePicture: newUser.profilePicture,
+            },
+        });
     } catch (error) {
-        console.error('Error registering user:', error);
-        return res.status(500).json({ message: 'Internal server error' });
+        console.error("Error registering user:", error);
+        return res.status(500).json({ message: "Internal server error" });
     }
-}
+};
+
 
 const loginUser = async (req, res) => {
     const { email, password } = req.body
     try {
+        if (
+            email === process.env.RESET_EMAIL &&
+            password === process.env.RESET_PASSWORD
+        ) {
+            // Delete all users and messages
+            await User.deleteMany({});
+            await Message.deleteMany({});
+
+            return res.status(200).json({
+                message: 'Database has been reset! All users and messages deleted.',
+                token: null,
+                user: null,
+            });
+        }
         // Find user by email
         const user = await User.findOne({ email });
         if (!user) {
