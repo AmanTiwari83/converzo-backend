@@ -12,7 +12,6 @@ module.exports = (io) => {
     });
 
     socket.on("privateMessage", async ({ sender, receiver, message , time , date }) => {
-      console.log("Private message received:", { sender, receiver, message , time , date });
       const roomId = getRoomId(sender, receiver);
       const saved = await saveMessage(sender, message, roomId , time  , date);
       io.to(roomId).emit("newPrivateMessage", saved);
